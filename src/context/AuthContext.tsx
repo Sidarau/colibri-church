@@ -33,13 +33,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth) return;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
-        const userData = userDoc.data();
-        const userRole = userData?.role ?? "user";
-        setRole(userRole);
-        setUser({ ...firebaseUser, role: userRole });
+        try {
+          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+          const userData = userDoc.data();
+          const userRole = userData?.role ?? "user";
+          setRole(userRole);
+          setUser({ ...firebaseUser, role: userRole });
+        } catch (err) {
+          console.error("Error fetching user role:", err);
+          setUser(firebaseUser); // fallback to basic user
+          setRole("user");
+        }
       } else {
         setUser(null);
         setRole(null);
